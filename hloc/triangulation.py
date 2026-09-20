@@ -79,8 +79,14 @@ def import_matches(
         matched |= {(id0, id1), (id1, id0)}
 
         if skip_geometric_verification:
+            # COLMAP ignores two-view geometries with an UNDEFINED config.
             db.write_two_view_geometry(
-                id0, id1, pycolmap.TwoViewGeometry(inlier_matches=matches)
+                id0,
+                id1,
+                pycolmap.TwoViewGeometry(
+                    config=pycolmap.TwoViewGeometryConfiguration.CALIBRATED,
+                    inlier_matches=matches,
+                ),
             )
 
 
@@ -153,10 +159,15 @@ def geometric_verification(
             )
             # TODO: We could also add E to the database, but we need
             # to reverse the transformations if id0 > id1 in utils/database.py.
+            # The matches are verified with the known relative pose. COLMAP
+            # ignores two-view geometries with an UNDEFINED config.
             db.write_two_view_geometry(
                 id0,
                 id1,
-                pycolmap.TwoViewGeometry(inlier_matches=matches[valid_matches, :]),
+                pycolmap.TwoViewGeometry(
+                    config=pycolmap.TwoViewGeometryConfiguration.CALIBRATED,
+                    inlier_matches=matches[valid_matches, :],
+                ),
             )
             inlier_ratios.append(np.mean(valid_matches))
     logger.info(
